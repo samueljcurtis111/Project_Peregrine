@@ -3,7 +3,7 @@ import random
 
 coding_options = {
     "language": [
-        "Python", "Rust", "C++", "Go", "JavaScript",
+        "Python", "Python", "Rust", "Rust", "C++", "C++", "Go", "Go", "JavaScript",
         "Java", "C#", "Ruby", "Swift", "Kotlin",
         "TypeScript", "C", "Elm", "Zig", "Dart",
         "Scala", "Haskell", "Lua", "PHP", "R",
@@ -439,8 +439,7 @@ coding_options = {
     ]
 }
 
-# Language choices are driven by task profiles below, not one global list.
-# Subtopic overrides further narrow activities requiring specialized capabilities.
+
 LANGUAGES = {
     "general": ["Python", "Rust", "C++", "Go", "JavaScript", "Java", "C#", "Ruby", "Swift", "Kotlin", "TypeScript", "C", "Elm", "Zig", "Dart", "Scala", "Haskell", "Lua", "PHP", "R", "Julia", "Bash"],
     "applications": ["Python", "Rust", "C++", "Go", "JavaScript", "Java", "C#", "Ruby", "Swift", "Kotlin", "TypeScript", "Dart", "Scala", "Haskell", "Lua", "PHP", "Zig"],
@@ -455,7 +454,6 @@ LANGUAGES = {
     "compiler": ["Python", "Rust", "C", "C++", "Go", "Java", "C#", "Kotlin", "Swift", "Zig", "Haskell"],
 }
 
-# Topic-specific scenarios: not every programming problem belongs on a microcontroller.
 PROFILES = {
     "Algorithms": ("general", ["Command-line utility", "Developer tool", "Scientific computing application", "School programming project", "Open-source library"]),
     "Data Structures": ("general", ["Command-line utility", "Developer tool", "Performance-critical library", "Open-source library", "School programming project"]),
@@ -478,7 +476,6 @@ PROFILES = {
     "Graphics and Simulation": ("graphics", ["Game engine", "Simulation", "Desktop application", "Scientific computing application"]),
 }
 
-# Restrict only topics that really depend on low-level/native capabilities.
 SUBTOPIC_LANGUAGE_OVERRIDES = {
     ("Performance Optimization", "Vectorization and SIMD"): "systems",
     ("Performance Optimization", "Cache locality"): "systems",
@@ -490,6 +487,10 @@ SUBTOPIC_LANGUAGE_OVERRIDES = {
     ("Graphics and Simulation", "3D transformations"): ["Python", "Rust", "C++", "C", "JavaScript", "TypeScript", "Java", "C#", "Kotlin", "Swift", "Dart", "Julia"],
     ("Artificial Intelligence and ML", "Gradient accumulation"): ["Python", "Julia", "C++"],
     ("Artificial Intelligence and ML", "Training loops"): ["Python", "Julia", "C++"],
+    ("Performance Optimization", "Database query optimization"): [
+    "Python", "Go", "Java", "C#", "JavaScript",
+    "TypeScript", "PHP", "Rust", "Kotlin", "Ruby"
+    ],
 }
 
 # SQL is a query language, not a substitute for a backend/application language.
@@ -528,7 +529,11 @@ def choose_coding_options(rng=random):
     if topic == "Databases" and subtopic not in SQL_SUBTOPICS:
         languages = [x for x in languages if x != "SQL"]
 
-    languages = [x for x in languages if x in coding_options["language"]]
+    compatible = set(languages)
+    languages = [
+        lang for lang in coding_options["language"]
+        if lang in compatible
+    ]
     if not languages:
         raise ValueError(f"No compatible language for {topic} / {subtopic}")
 
@@ -572,11 +577,52 @@ def choose_coding_options(rng=random):
         constraints += ["Avoid recursion when practical", "Use an iterative approach"]
     constraints = [x for x in constraints if x in coding_options["constraints"]]
 
-    styles = list(coding_options["answer_style"]) if task in EXPLANATION_TASKS else list(CODE_ANSWER_STYLES)
-    if task in {"Find and fix a bug", "Debug a provided code snippet", "Fix a compilation error", "Fix a failing test"}:
-        styles = [x for x in styles if x != "Compare approaches with code examples"]
+    styles = (
+        list(coding_options["answer_style"])
+        if task in EXPLANATION_TASKS
+        else list(CODE_ANSWER_STYLES)
+    )
+
+    if task in {
+        "Explain a complex technical concept",
+        "Design a software architecture",
+        "Analyze edge cases",
+    }:  
+        styles = [
+            s for s in styles
+            if s not in {
+                "Provide code and unit tests",
+                "Production-oriented implementation",
+                "Step-by-step implementation",
+            }
+    ]
+
+    BUG_FIX_TASKS = {
+        "Find and fix a bug",
+        "Debug a provided code snippet",
+        "Fix a compilation error",
+        "Fix a failing test",
+        "Diagnose a runtime error",
+    }
+
+    if task not in BUG_FIX_TASKS:
+        styles = [
+            s for s in styles
+            if s != "Show the corrected code and explain the bug"
+        ]
+
+    if task in BUG_FIX_TASKS:
+        styles = [
+            s for s in styles
+            if s != "Compare approaches with code examples"
+        ]
+
     if language == "SQL":
-        styles = [x for x in styles if x != "Provide code and unit tests"]
+        styles = [
+            s for s in styles
+            if s != "Provide code and unit tests"
+        ]
+    
     return {
         "language": language,
         "topic": topic,
@@ -775,6 +821,10 @@ Requirements:
 - Do not expose hidden reasoning or internal analysis.
 - Return ONLY valid JSON with "question" and "answer".
 - Do not include markdown fences around the JSON.
+- When a task requires source material, include that
+  material in the generated user question.
+- Difficulty refers to subject complexity, not user
+  expertise. Adapt the explanation to the user.
 """
 
 template_code = """
@@ -816,29 +866,32 @@ Requirements:
 - Do not expose hidden reasoning or internal analysis.
 - Return ONLY valid JSON with "question" and "answer".
 - Do not include markdown fences around the JSON.
+- Match the answer style to the task.
+- Never pretend to correct code that the question
+  does not provide.
 """
 
-coding_selected = choose_coding_options()
+def generate_prompt(rng=random):
+    dataset_type = "general" if rng.random() < 0.6 else "coding"
 
-category = random.choice(list(general_options["category"].keys()))
+    if dataset_type == "coding":
+        selected = choose_coding_options(rng)
+        return template_code.format(**selected)
 
-general_selected = {
-    "category": category,
-    "topic": random.choice(general_options["category"][category]),
-    "difficulty": random.choice(general_options["difficulty"]),
-    "task_type": random.choice(general_options["task_type"]),
-    "question_style": random.choice(general_options["question_style"]),
-    "response_style": random.choice(general_options["response_style"]),
-    "context": random.choice(general_options["context"])
-}
+    category = rng.choice(list(general_options["category"]))
 
-general = template_general.format(**general_selected)
+    selected = {
+        "category": category,
+        "topic": rng.choice(general_options["category"][category]),
+        "difficulty": rng.choice(general_options["difficulty"]),
+        "task_type": rng.choice(general_options["task_type"]),
+        "question_style": rng.choice(general_options["question_style"]),
+        "response_style": rng.choice(general_options["response_style"]),
+        "context": rng.choice(general_options["context"]),
+    }
 
-coding = template_code.format(**coding_selected)
+    return template_general.format(**selected)
 
-dataset_type = "general" if random.random() < 0.6 else "coding"
 
-prompt = general if dataset_type == "general" else coding
-
-print(f"Dataset type: {dataset_type}")
-print(prompt)
+if __name__ == "__main__":
+    print(generate_prompt())
