@@ -27,7 +27,11 @@ Change: Swap from 2 llms running on Google Tpu's via kaggle to using the duel T4
 - **Reason:** More GPU hours than TPU hours and simplification
 - **Status:** Planned
 
+**What I got Done**
+- finish the prompt generator
+- start the part that talks to the kaggle llm
+
 **Next steps:**
-- Implement the first generator
-- Define the JSONL schema
-- Test writing and validating generated examples
+- Parse the output
+- Validate the response
+- Save it to a JSONL file
