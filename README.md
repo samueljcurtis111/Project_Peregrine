@@ -1,18 +1,18 @@
 ![Peregrine Logo](Peregrine_Logo.PNG)
 
-Peregrine
+# Peregrine
 
 Training a language model from scratch.
 
-I’ve spent a lot of time messing around with local LLMs, fine-tuning, and trying to squeeze models onto hardware they probably shouldn’t fit on. Eventually, I started wondering what it would take to build one myself.
+I’ve spent a lot of time messing around with local LLMs, fine tuning, and trying to squeeze models onto hardware they probably shouldn’t fit on. Eventually, I started wondering what it would take to build one myself.
 
 So that’s what I’m doing.
 
-Peregrine is my attempt at training a general-purpose language model from the ground up. The goal is a 14-billion-parameter model, Peregrine-14B, that can handle everyday tasks, reasoning, and programming without being built exclusively for any one of them.
+Peregrine is my attempt at training a general purpose language model from the ground up. The goal is a 14 billion-parameter model, Peregrine-14B, that can handle everyday tasks, reasoning, and programming without being built exclusively for any one of them.
 
 It’s a pretty ambitious project, especially without a massive compute budget, but I want to see how far I can take it.
 
-The idea
+### The idea
 
 One thing I’ve been interested in is how the order of training data affects a model.
 
@@ -26,7 +26,7 @@ That’s the main experiment behind Peregrine.
 
 I want to find out whether changing the data mixture throughout training can produce a better model without increasing the total number of training tokens.
 
-How I’m approaching it
+### How I’m approaching it
 
 Rather than throwing a massive dataset at a 14B model and hoping for the best, I’m starting small.
 
@@ -41,7 +41,7 @@ A few things I’m working on:
 
 I’m also building tools to make dataset preparation and experimentation easier. Ideally, I want to be able to change the training recipe without rebuilding the entire dataset every time.
 
-The model
+### The model
 
 The target is Peregrine-14B, a decoder-only transformer trained from scratch.
 
@@ -57,7 +57,7 @@ I’m planning to apply for Google TPU Research Cloud to get the compute needed 
 
 I’d much rather finish training a smaller model properly than end up with a half-trained 14B model.
 
-Current progress
+### Current progress
 
 This is still in the early stages.
 
@@ -67,15 +67,14 @@ The next big step is getting the smaller training runs working, collecting actua
 
 There aren’t any pretrained weights or benchmark results yet. I’ll add those as they become available.
 
-Why Peregrine?
+### Why Peregrine?
 
 I wanted a name that was simple, recognizable, and actually sounded like a model name.
 
 Peregrine falcons are known for their speed and precision, which felt pretty fitting.
 
-Plus, Peregrine-14B just sounds cool.
 
-What’s next?
+### What’s next?
 
 First, get the data pipeline working properly. Then train some smaller models, run the experiments, and hopefully learn enough to make the big training run worthwhile.
 
