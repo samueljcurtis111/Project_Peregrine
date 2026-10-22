@@ -50,3 +50,24 @@ def save_example(example):
     with open("output.jsonl", "a", encoding="utf-8") as f:
         f.write(json.dumps(example) + "\n")
 
+
+def main():
+    target = 100
+    sucesses = 0
+    attempts = 0
+
+    while sucesses < target and attempts < 150:
+        try:
+            gen_example_result = generate_example()
+            save_example(gen_example_result)
+            print("Saved")
+            sucesses += 1
+            attempts += 1
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            attempts += 1
+
+    print(f"Total successful examples: {sucesses}")
+
+if __name__ == "__main__":
+    main()
