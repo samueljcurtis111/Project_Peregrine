@@ -22,6 +22,7 @@ client = OpenAI(
 def generate_example():
     dataset_type, prompt_text = prompt.generate_prompt()
     response = client.chat.completions.create(
+        response_format={"type": "json_object"},
         model="qwen3.6:35b",
         messages=[
             {"role": "user", "content": prompt_text}
@@ -59,11 +60,11 @@ def save_example(example, dataset_type):
 
 
 def main():
-    target = 100
+    target = 10000
     sucesses = 0
     attempts = 0
 
-    while sucesses < target and attempts < 150:
+    while sucesses < target and attempts < 12000:
         try:
             dataset_type, gen_example_result = generate_example()
             save_example(gen_example_result, dataset_type)
@@ -73,6 +74,7 @@ def main():
         except Exception as e:
             print(f"Error occurred: {e}")
             attempts += 1
+            time.sleep(5)
 
     print(f"Total successful examples: {sucesses}")
 

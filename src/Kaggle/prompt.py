@@ -794,46 +794,109 @@ general_options = {
     ]
 }
 
+
 template_general = """
-You are generating high-quality supervised fine-tuning
-data for a general-purpose AI assistant.
+You are creating exceptionally high-quality supervised fine-tuning
+(SFT) data for a capable, general-purpose AI assistant.
 
-Create exactly ONE original user question and its
-ideal assistant response.
+Generate exactly ONE realistic user question and the best possible
+assistant response. The result should teach a model to be accurate,
+helpful, clear, natural, and appropriately concise.
 
+TASK CONFIGURATION
 Category: {category}
 Topic: {topic}
 Difficulty: {difficulty}
 Task type: {task_type}
 Question style: {question_style}
 Response style: {response_style}
-Context: {context}
+User context: {context}
 
-Requirements:
-- The question must sound like something a real user
-  might ask.
-- Produce a helpful, accurate, natural response.
-- Match the requested difficulty and response style.
-- Avoid unsupported claims and fabricated sources.
-- Avoid questions requiring rapidly changing facts
-  unless all necessary facts are supplied in context.
-- Include uncertainty when the answer isn't definite.
+QUESTION QUALITY
+- Write a question that a real person might naturally ask an AI.
+- Follow the selected topic, difficulty, task, and question style.
+- Vary vocabulary, structure, specificity, and conversational tone.
+- Simple questions should be genuinely simple, not artificially complex.
+- Do not invent long backstories, professional identities, or detailed
+  hypothetical situations unless the selected style requires them.
+- Use realistic details and constraints only when they improve the task.
+- Questions may be casual, direct, technical, curious, or challenging.
+- If the task involves summarizing, interpreting, evaluating, editing,
+  or transforming supplied material, include that material in the
+  question. Never assume access to an unseen document or image.
+- Make the question self-contained and answerable.
+
+ANSWER QUALITY
+- Answer the actual question directly and correctly.
+- Provide the most useful response, not the longest response.
+- Match the requested response style and the user's knowledge level.
+- For straightforward questions, prefer a short, direct answer.
+- For moderate questions, explain enough to build understanding.
+- For genuinely difficult questions, provide necessary depth,
+  examples, calculations, or step-by-step explanations.
+- Do not turn simple answers into essays.
+- Avoid unnecessary introductions, conclusions, or repeated points.
+- Use natural language rather than generic AI-sounding phrases.
+- Prefer clear explanations over elaborate wording.
+- Include examples only when they genuinely improve understanding.
+- Use lists or headings when helpful, not automatically.
+- Follow all constraints stated in the generated user question.
+- If a question requests a specific format, follow it precisely.
+
+FACTUAL ACCURACY AND REASONING
+- Prioritize correctness over sounding impressive.
+- Ensure mathematical calculations, formulas, units, and conclusions
+  are consistent and accurate.
+- Verify important reasoning steps internally before answering.
+- Distinguish established facts from assumptions and interpretations.
+- Never fabricate citations, studies, quotations, statistics, or facts.
+- Avoid inventing precise dates, figures, or technical details.
+- Avoid questions requiring current information unless all relevant
+  facts are explicitly provided in the question.
+- Acknowledge meaningful uncertainty without excessive disclaimers.
+- Do not present subjective recommendations as universal rules.
+- Do not claim to have verified information using tools you did not use.
 - Do not expose hidden reasoning or internal analysis.
-- Return ONLY valid JSON with "question" and "answer".
-- Do not include markdown fences around the JSON.
-- When a task requires source material, include that
-  material in the generated user question.
-- Difficulty refers to subject complexity, not user
-  expertise. Adapt the explanation to the user.
+
+RESPONSE LENGTH AND NATURALNESS
+- Let the complexity of the question determine the response length.
+- A simple factual question may need only one sentence.
+- A normal question may need a short paragraph or a few bullets.
+- A complex question may justify a detailed, structured response.
+- Do not add unnecessary context solely to increase answer length.
+- Avoid repetitive structures across examples.
+- Do not always begin with an introduction or end with a summary.
+- The output should read like a genuinely excellent assistant reply,
+  not like a textbook chapter or a synthetic benchmark.
+
+FINAL QUALITY CHECK
+Before producing the output, internally verify:
+- The question is realistic, original, and self-contained.
+- The answer addresses every important part of the question.
+- All factual claims and calculations are defensible.
+- The length and formatting fit the task.
+- There are no contradictions, invented sources, or filler.
+
+OUTPUT FORMAT
+Return ONLY valid JSON with "question" and "answer".
+Both values must be nonempty strings.
+Return exactly one JSON object with exactly these two keys.
+Escape embedded quotes, backslashes, and newlines correctly.
+Do not include markdown fences around the JSON.
+Do not include explanations or text outside the JSON.
 """
 
+
+
 template_code = """
-You are generating high-quality supervised fine-tuning
-data for a general-purpose AI assistant.
+You are creating exceptionally high-quality supervised fine-tuning
+(SFT) data for a capable AI programming assistant.
 
-Create exactly ONE original coding question and its
-ideal answer.
+Generate exactly ONE realistic programming question and its ideal
+assistant response. The result should teach accurate programming,
+careful debugging, clear explanations, and sound engineering judgment.
 
+TASK CONFIGURATION
 Language: {language}
 Topic: {topic}
 Subtopic: {subtopic}
@@ -844,32 +907,106 @@ Constraints: {constraints}
 Answer style: {answer_style}
 Question must include source code: {requires_source_code}
 
-Requirements:
-- The question must be specific, realistic, and solvable.
-- Use only language APIs and capabilities appropriate to the selected
-  language, subtopic, and scenario.
-- If the task requires source code in the question, supply a realistic
-  original code snippet (or failing test/error as appropriate) that
-  contains enough information to answer it.
-- Use an executable code example only when appropriate to the task.
-- Never make up runtime output, compiled behavior, or test results.
-- For SQL, state the SQL dialect in the question; prefer SQLite
-  unless the task requires another dialect.
-- For code conversion tasks, include the original language and code
-  snippet in the question and name the destination language.
-- Do not force a scenario that the chosen language cannot support.
-- Vary the structure and wording naturally.
-- The answer must be accurate, complete, and useful.
-- Include working code when appropriate.
-- Handle important edge cases.
-- Never invent test results or claim code was executed.
-- Do not expose hidden reasoning or internal analysis.
-- Return ONLY valid JSON with "question" and "answer".
-- Do not include markdown fences around the JSON.
-- Match the answer style to the task.
-- Never pretend to correct code that the question
-  does not provide.
+QUESTION QUALITY
+- Create a realistic, specific, solvable programming task.
+- Follow the selected language, topic, subtopic, and task type.
+- Use a scenario only when it naturally fits the programming task.
+- Simple coding questions should remain simple.
+- Complex tasks should have sufficiently detailed requirements.
+- Avoid unnecessary backstories and artificial requirements.
+- Specify inputs, expected behavior, and meaningful constraints
+  when needed to make the task unambiguous.
+- Do not introduce contradictory or impossible requirements.
+- Use valid syntax and real language features and APIs.
+- If source code is required in the question, provide an original,
+  realistic code snippet with enough context to solve the task.
+- For debugging tasks, include a genuine, identifiable problem.
+- For failing-test tasks, provide enough information to explain
+  and correct the failure.
+- For optimization tasks, include code or an implementation
+  whose performance can meaningfully be improved.
+- For conversion tasks, include the original code and clearly
+  identify both the source and destination languages.
+- For SQL tasks, identify the dialect, preferably SQLite
+  unless another dialect is necessary.
+- Do not invent dependencies, APIs, or framework functionality.
+- Keep the task achievable without missing external information.
+
+CODE CORRECTNESS
+- Produce logically correct, executable code when code is requested.
+- Verify syntax, language version assumptions, and API usage internally.
+- Ensure the implementation actually satisfies the question.
+- Account for meaningful edge cases and failure conditions.
+- Validate inputs where appropriate to the requested task.
+- Use appropriate error handling; never silently hide important errors.
+- Avoid broad exception handling when only specific failures
+  should be retried or recovered from.
+- Check loop boundaries, indexing, types, resource handling,
+  state changes, and termination conditions.
+- For concurrent code, consider synchronization and race conditions.
+- For asynchronous code, distinguish blocking from nonblocking calls.
+- For algorithms, use the correct logic and relevant complexity.
+- For optimization, preserve correctness and required behavior.
+- For security-related tasks, prefer established safe practices.
+- Avoid introducing unnecessary dependencies or complexity.
+- Follow language idioms and the selected constraints.
+- Do not claim code has been executed, compiled, or tested
+  unless actual execution results were supplied in the question.
+
+ANSWER QUALITY
+- Give the correct solution directly.
+- Include complete code when the task requires an implementation.
+- Do not substitute pseudocode for requested working code.
+- Do not add code when a conceptual explanation is sufficient.
+- Explain important implementation decisions clearly and accurately.
+- Ensure every claim in the explanation matches the actual code.
+- Do not describe safeguards or behavior the code does not implement.
+- For debugging tasks, identify the actual bug and explain the fix.
+- For code review, distinguish confirmed bugs from possible concerns.
+- For performance questions, avoid unsupported speedup claims.
+- Provide examples or tests when helpful or explicitly requested.
+- Never fabricate successful test results or benchmark measurements.
+- Make assumptions explicit when they materially affect correctness.
+- Match the selected answer style without unnecessary verbosity.
+
+RESPONSE LENGTH AND STYLE
+- Match response length to task complexity.
+- A small fix may need only corrected code and one explanation.
+- A straightforward implementation should be concise and readable.
+- A complex algorithm or system may require detailed explanations,
+  examples, tradeoffs, or tests.
+- Avoid excessive comments that merely repeat the code.
+- Avoid unnecessary frameworks, abstractions, and boilerplate.
+- Do not force long explanations onto simple programming problems.
+- Use realistic variable names and readable formatting.
+- Include code fences inside the answer string when appropriate.
+- Do not repeat the question or pad the answer with generic advice.
+
+INTERNAL VERIFICATION
+Before producing the output, carefully check:
+- Does the code satisfy the complete specification?
+- Are arguments, return values, and types handled correctly?
+- Are the important edge cases covered?
+- Does each control-flow path behave as described?
+- Are language features and library APIs used correctly?
+- Is the explanation consistent with the implementation?
+- Are any claimed test results or performance figures invented?
+- Could a simpler implementation solve the task more reliably?
+
+Correct any discovered inconsistencies before responding.
+If a fully correct solution would require unspecified information,
+make minimal reasonable assumptions and state them clearly.
+Do not expose hidden reasoning or internal analysis.
+
+OUTPUT FORMAT
+Return ONLY valid JSON with "question" and "answer".
+Both values must be nonempty strings.
+Return exactly one JSON object with exactly these two keys.
+Escape embedded quotes, backslashes, and newlines correctly.
+Do not include markdown fences around the JSON object.
+Do not include explanations or text outside the JSON.
 """
+
 
 def generate_prompt(rng=random):
     dataset_type = "general" if rng.random() < 0.6 else "code"
