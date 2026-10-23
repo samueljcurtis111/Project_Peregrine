@@ -1,10 +1,13 @@
 import json
+import sys
+
+dataset_type = sys.argv[1]
 
 valid_count = 0
 invalid_count = 0
 
-with open("output_unique.jsonl", "r", encoding="utf-8") as f:
-    with open("validated_output.jsonl", "w", encoding="utf-8") as out_f:
+with open(f"{dataset_type}_unique.jsonl", "r", encoding="utf-8") as f:
+    with open(f"{dataset_type}_validated.jsonl", "x", encoding="utf-8") as out_f:
         for line in f:
             try:
                 example = json.loads(line)

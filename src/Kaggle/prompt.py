@@ -872,11 +872,11 @@ Requirements:
 """
 
 def generate_prompt(rng=random):
-    dataset_type = "general" if rng.random() < 0.6 else "coding"
+    dataset_type = "general" if rng.random() < 0.6 else "code"
 
-    if dataset_type == "coding":
+    if dataset_type == "code":
         selected = choose_coding_options(rng)
-        return template_code.format(**selected)
+        return dataset_type, template_code.format(**selected)
 
     category = rng.choice(list(general_options["category"]))
 
@@ -890,7 +890,7 @@ def generate_prompt(rng=random):
         "context": rng.choice(general_options["context"]),
     }
 
-    return template_general.format(**selected)
+    return dataset_type, template_general.format(**selected)
 
 
 if __name__ == "__main__":

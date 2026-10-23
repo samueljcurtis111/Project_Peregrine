@@ -20,10 +20,11 @@ client = OpenAI(
 
 
 def generate_example():
+    dataset_type, prompt_text = prompt.generate_prompt()
     response = client.chat.completions.create(
         model="qwen3.6:35b",
         messages=[
-            {"role": "user", "content": prompt.generate_prompt()}
+            {"role": "user", "content": prompt_text}
         ]
     )
 
@@ -44,7 +45,7 @@ def generate_example():
         if not isinstance(answer, str) or not answer.strip():
             raise ValueError("Missing answer")
 
-        return {
+        return dataset_type, {
             "question": question.strip(),
             "answer": answer.strip()
         }
@@ -52,8 +53,8 @@ def generate_example():
         raise ValueError("Qwen did not return a JSON object")
 
 
-def save_example(example):
-    with open("output.jsonl", "a", encoding="utf-8") as f:
+def save_example(example, dataset_type):
+    with open(f"{dataset_type}.jsonl", "a", encoding="utf-8") as f:
         f.write(json.dumps(example) + "\n")
 
 
@@ -64,8 +65,8 @@ def main():
 
     while sucesses < target and attempts < 150:
         try:
-            gen_example_result = generate_example()
-            save_example(gen_example_result)
+            dataset_type, gen_example_result = generate_example()
+            save_example(gen_example_result, dataset_type)
             print("Saved")
             sucesses += 1
             attempts += 1
