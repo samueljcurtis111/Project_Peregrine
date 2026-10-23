@@ -3,15 +3,21 @@ import time
 from pathlib import Path
 from openai import OpenAI
 import prompt
-
-
-
+import os
+import httpx
 
 
 client = OpenAI(
-    base_url="url_here",
-    api_key="ollama"
+    base_url=os.environ["OLLAMA_API_URL"],
+    api_key="ollama",
+    http_client=httpx.Client(
+        auth=httpx.BasicAuth(
+            "peregrine",
+            os.environ["OLLAMA_TUNNEL_PASSWORD"]
+        )
+    )
 )
+
 
 def generate_example():
     response = client.chat.completions.create(

@@ -8,6 +8,8 @@ with open("output_unique.jsonl", "r", encoding="utf-8") as f:
         for line in f:
             try:
                 example = json.loads(line)
+                if not isinstance(example, dict):
+                    raise ValueError("Expected a JSON object")
                 question = example.get("question")
                 answer = example.get("answer")
 
