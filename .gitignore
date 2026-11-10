@@ -12,3 +12,11 @@ output/
 
 *.gguf
 *.safetensors
+
+# Generated datasets from the original generator scripts
+/dataset_generator/general.jsonl
+/dataset_generator/code.jsonl
+/dataset_generator/general_unique.jsonl
+/dataset_generator/code_unique.jsonl
+/dataset_generator/general_validated.jsonl
+/dataset_generator/code_validated.jsonl
