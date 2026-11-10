@@ -1,87 +1,92 @@
-![Peregrine Logo](Peregrine_Logo.PNG)
+# Peregrine Synthetic Dataset Generator
 
-# Peregrine
+This repository contains the synthetic question-and-answer dataset generator and the Kaggle notebook used to host its Ollama model.
 
-Training a language model from scratch.
+The original generator, prompt templates, deduplication script, validation script, and Kaggle notebook have been moved without changing their contents.
 
-I’ve spent a lot of time messing around with local LLMs, fine tuning, and trying to squeeze models onto hardware they probably shouldn’t fit on. Eventually, I started wondering what it would take to build one myself.
+## 1. Start the model server on Kaggle
 
-So that’s what I’m doing.
+Open `kaggle/peregrine-dataset-generator.ipynb` in Kaggle.
 
-Peregrine is my attempt at training a general purpose language model from the ground up. The goal is a 14 billion-parameter model, Peregrine-14B, that can handle everyday tasks, reasoning, and programming without being built exclusively for any one of them.
+In the notebook settings:
+- Enable internet access.
+- Select a GPU accelerator. The notebook sets `CUDA_VISIBLE_DEVICES=0,1`, so use a dual-GPU option such as 2x T4 when available.
 
-It’s a pretty ambitious project, especially without a massive compute budget, but I want to see how far I can take it.
+Add these Kaggle secrets before running the notebook:
+- `NGROK_AUTH_TOKEN`: your ngrok authentication token.
+- `OLLAMA_TUNNEL_PASSWORD`: a password for the authenticated tunnel.
 
-### The idea
+Run the notebook cells in order. It installs Ollama, starts the server, pulls `qwen3.6:35b`, and prints an HTTPS API URL ending in `/v1`.
 
-One thing I’ve been interested in is how the order of training data affects a model.
+Keep the printed URL and password private. The Kaggle session must remain running while you generate data.
 
-For example, if two models see the exact same amount of general text and code, will they perform differently depending on when they see that code?
+## 2. Install the local Python dependency
 
-What if one model trains on a consistent mix from beginning to end, while another starts with mostly general text and gradually introduces more programming data?
+From the repository root:
 
-And would either approach make the model more resistant to losing performance when quantized?
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
 
-That’s the main experiment behind Peregrine.
+The requirements file retains the original `openai` dependency.
 
-I want to find out whether changing the data mixture throughout training can produce a better model without increasing the total number of training tokens.
+## 3. Run the original generator
 
-### How I’m approaching it
+In PowerShell, set the URL printed by the Kaggle notebook and the same tunnel password:
 
-Rather than throwing a massive dataset at a 14B model and hoping for the best, I’m starting small.
+```powershell
+$env:OLLAMA_API_URL = "https://your-ngrok-host/v1"
+$env:OLLAMA_TUNNEL_PASSWORD = "your-tunnel-password"
+cd .\dataset_generator
+python .\generator.py
+```
 
-The plan is to run controlled experiments using smaller models, compare different training schedules, and use what I learn to decide how to train the larger model.
+Run `generator.py` from inside `dataset_generator/`. This preserves the original script's `import prompt` behavior and places its output files beside the scripts.
 
-A few things I’m working on:
+The original generator uses the `qwen3.6:35b` model, requests 10,000 successful examples, and allows up to 12,000 attempts. It appends to the output files if they already exist.
 
-* Data pipeline: Keeping general text and programming data separate so I can control how much of each the model sees during training.
-* Training: Using Google’s MaxText framework to train on TPUs, with the goal of eventually scaling to 14B parameters.
-* Evaluation: Comparing models at the same training-token budgets to see which approaches actually work.
-* Quantization: Testing checkpoints at lower precision, including 4-bit quantization, to see how much performance is lost and whether the training schedule makes a difference.
+Generated files:
+- `general.jsonl`
+- `code.jsonl`
 
-I’m also building tools to make dataset preparation and experimentation easier. Ideally, I want to be able to change the training recipe without rebuilding the entire dataset every time.
+The prompt generator chooses general prompts about 60% of the time and coding prompts about 40% of the time.
 
-### The model
+## 4. Deduplicate and validate
 
-The target is Peregrine-14B, a decoder-only transformer trained from scratch.
+Keep the working directory set to `dataset_generator/` and run:
 
-I want it to be a capable general-purpose model that can also write and understand code. Not a coding model that can barely hold a conversation, and not a chat model that falls apart when you give it a programming problem.
+```powershell
+python .\deduplicate.py general
+python .\validate.py general
 
-The exact architecture and training configuration aren’t finalized yet. I’d rather make those decisions based on the early experiments than lock everything in before I’ve tested anything.
+python .\deduplicate.py code
+python .\validate.py code
+```
 
-Compute
+This creates:
+- `general_unique.jsonl` and `code_unique.jsonl`
+- `general_validated.jsonl` and `code_validated.jsonl`
 
-I’m planning to apply for Google TPU Research Cloud to get the compute needed for the larger training runs.
+The original cleanup scripts create derived files only when they do not already exist. Before rerunning deduplication or validation, remove the corresponding existing `*_unique.jsonl` and `*_validated.jsonl` files. To start generation from scratch, also remove or move the existing `general.jsonl` and `code.jsonl` files.
 
-14B is the goal, but it’s not guaranteed. If I can’t get enough compute, I’ll scale down to 8B or potentially 3B–4B.
+## Repository layout
 
-I’d much rather finish training a smaller model properly than end up with a half-trained 14B model.
+```text
+.
+├── dataset_generator/
+│   ├── generator.py
+│   ├── prompt.py
+│   ├── deduplicate.py
+│   └── validate.py
+├── kaggle/
+│   └── peregrine-dataset-generator.ipynb
+├── docs/
+│   └── generation-journal.md
+├── requirements.txt
+├── LICENSE
+└── README.md
+```
 
-### Current progress
-
-This is still in the early stages.
-
-I’ve started working on dataset preparation and have the prompt-generation script written. Right now, I’m building out the rest of the data pipeline and figuring out how I want to structure the experiments.
-
-The next big step is getting the smaller training runs working, collecting actual results, and seeing whether the idea holds up.
-
-There aren’t any pretrained weights or benchmark results yet. I’ll add those as they become available.
-
-### Why Peregrine?
-
-I wanted a name that was simple, recognizable, and actually sounded like a model name.
-
-Peregrine falcons are known for their speed and precision, which felt pretty fitting.
-
-
-### What’s next?
-
-First, get the data pipeline working properly. Then train some smaller models, run the experiments, and hopefully learn enough to make the big training run worthwhile.
-
-I don’t expect everything to work on the first try. A lot of this project is me figuring things out as I go, and that’s part of why I’m doing it.
-
-If the research produces something interesting, great. If I end up learning a ridiculous amount about training language models in the process, that’s a win too.
-
-⸻
-
-Project Peregrine is an independent research and development project. Still very much a work in progress.
+The JSONL files produced by the scripts are local outputs and are ignored by Git. Generated examples are synthetic; review them before using them for training. Structural validation and question deduplication do not verify factual accuracy or code correctness.
