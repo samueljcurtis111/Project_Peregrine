@@ -2,15 +2,13 @@
 .env.*
 !.env.example
 
-.venv/
 __pycache__/
-*.py[cod]
-.ipynb_checkpoints/
+*.pyc
+.venv/
 
-# Generated datasets and logs
-/output/
-*.log
+output/
+*.db
+*.sqlite3
 
-# Model artifacts
 *.gguf
 *.safetensors
