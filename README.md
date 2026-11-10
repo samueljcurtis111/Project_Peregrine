@@ -84,8 +84,6 @@ The original cleanup scripts create derived files only when they do not already 
 │   └── validate.py
 ├── kaggle/
 │   └── peregrine-dataset-generator.ipynb
-├── docs/
-│   └── generation-journal.md
 ├── requirements.txt
 ├── LICENSE
 └── README.md
