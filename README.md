@@ -1,87 +1,117 @@
-![Peregrine Logo](Peregrine_Logo.PNG)
+# Peregrine Synthetic Dataset Generator
 
-# Peregrine
+Peregrine is a small project for generating synthetic question-and-answer data for instruction tuning. It uses randomized prompt templates and an Ollama model exposed through an OpenAI-compatible API.
 
-Training a language model from scratch.
+The project currently generates two dataset types:
 
-I’ve spent a lot of time messing around with local LLMs, fine tuning, and trying to squeeze models onto hardware they probably shouldn’t fit on. Eventually, I started wondering what it would take to build one myself.
+- **General:** everyday questions, explanations, reasoning, and other assistant tasks.
+- **Code:** programming tasks across a range of languages, topics, and difficulty levels.
 
-So that’s what I’m doing.
+The prompt generator currently samples general tasks 60% of the time and coding tasks 40% of the time. Generated records use JSONL with exactly two fields: `question` and `answer`.
 
-Peregrine is my attempt at training a general purpose language model from the ground up. The goal is a 14 billion-parameter model, Peregrine-14B, that can handle everyday tasks, reasoning, and programming without being built exclusively for any one of them.
+## How it fits together
 
-It’s a pretty ambitious project, especially without a massive compute budget, but I want to see how far I can take it.
+1. **Kaggle hosts Ollama.** Run [`kaggle/ollama_server.ipynb`](kaggle/ollama_server.ipynb) with internet access and a GPU accelerator. The notebook installs Ollama, pulls the configured model, and exposes its API through an authenticated ngrok tunnel.
+2. **The generator creates examples.** `dataset_generator/prompt.py` builds a randomized general or coding prompt. `dataset_generator/generator.py` sends it to the Ollama endpoint using the OpenAI Python client and saves the returned JSON object.
+3. **The cleanup scripts prepare the JSONL.** Run the deduplication script and then the validator on each dataset type.
 
-### The idea
+This repository contains the generator and Kaggle setup—not foundation-model training code, tokenizer experiments, or a copy of the source corpora.
 
-One thing I’ve been interested in is how the order of training data affects a model.
+## Setup
 
-For example, if two models see the exact same amount of general text and code, will they perform differently depending on when they see that code?
+Use Python 3.10 or newer on the machine where you want to run the generator.
 
-What if one model trains on a consistent mix from beginning to end, while another starts with mostly general text and gradually introduces more programming data?
+```bash
+python -m venv .venv
+```
 
-And would either approach make the model more resistant to losing performance when quantized?
+Activate the virtual environment, then install the dependencies:
 
-That’s the main experiment behind Peregrine.
+```bash
+python -m pip install -r requirements.txt
+```
 
-I want to find out whether changing the data mixture throughout training can produce a better model without increasing the total number of training tokens.
+## Start the Kaggle model server
 
-### How I’m approaching it
+1. Open `kaggle/ollama_server.ipynb` in Kaggle.
+2. In notebook settings, enable internet and select a GPU accelerator. Select dual T4 GPUs when that option is available to your account.
+3. Add these two Kaggle secrets:
+   - `NGROK_AUTH_TOKEN`: your ngrok authentication token.
+   - `OLLAMA_TUNNEL_PASSWORD`: a strong password used to protect the tunnel.
+4. Run the notebook cells in order. It installs and starts Ollama, pulls `qwen3.6:35b`, and prints an HTTPS API URL ending in `/v1`.
 
-Rather than throwing a massive dataset at a 14B model and hoping for the best, I’m starting small.
+Keep the tunnel URL and password private. Do not commit either value or put secrets directly in the notebook.
 
-The plan is to run controlled experiments using smaller models, compare different training schedules, and use what I learn to decide how to train the larger model.
+## Run the generator
 
-A few things I’m working on:
+On the machine running this repository, set the URL printed by Kaggle and the same tunnel password.
 
-* Data pipeline: Keeping general text and programming data separate so I can control how much of each the model sees during training.
-* Training: Using Google’s MaxText framework to train on TPUs, with the goal of eventually scaling to 14B parameters.
-* Evaluation: Comparing models at the same training-token budgets to see which approaches actually work.
-* Quantization: Testing checkpoints at lower precision, including 4-bit quantization, to see how much performance is lost and whether the training schedule makes a difference.
+**macOS / Linux**
 
-I’m also building tools to make dataset preparation and experimentation easier. Ideally, I want to be able to change the training recipe without rebuilding the entire dataset every time.
+```bash
+export OLLAMA_API_URL="https://your-ngrok-host/v1"
+export OLLAMA_TUNNEL_PASSWORD="your-tunnel-password"
+export OLLAMA_MODEL="qwen3.6:35b"
+python -m dataset_generator.generator
+```
 
-### The model
+**Windows PowerShell**
 
-The target is Peregrine-14B, a decoder-only transformer trained from scratch.
+```powershell
+$env:OLLAMA_API_URL = "https://your-ngrok-host/v1"
+$env:OLLAMA_TUNNEL_PASSWORD = "your-tunnel-password"
+$env:OLLAMA_MODEL = "qwen3.6:35b"
+python -m dataset_generator.generator
+```
 
-I want it to be a capable general-purpose model that can also write and understand code. Not a coding model that can barely hold a conversation, and not a chat model that falls apart when you give it a programming problem.
+The defaults are 10,000 successful examples and up to 12,000 attempts. Override them with `TARGET_EXAMPLES` and `MAX_ATTEMPTS` environment variables. The model can be changed with `OLLAMA_MODEL`.
 
-The exact architecture and training configuration aren’t finalized yet. I’d rather make those decisions based on the early experiments than lock everything in before I’ve tested anything.
+Generated files are written under `output/`:
 
-Compute
+- `output/general.jsonl`
+- `output/code.jsonl`
 
-I’m planning to apply for Google TPU Research Cloud to get the compute needed for the larger training runs.
+Each line is one JSON object containing a non-empty `question` and `answer`.
 
-14B is the goal, but it’s not guaranteed. If I can’t get enough compute, I’ll scale down to 8B or potentially 3B–4B.
+## Deduplicate and validate
 
-I’d much rather finish training a smaller model properly than end up with a half-trained 14B model.
+Run these from the repository root after generation:
 
-### Current progress
+```bash
+python -m dataset_generator.deduplicate general
+python -m dataset_generator.validate general
 
-This is still in the early stages.
+python -m dataset_generator.deduplicate code
+python -m dataset_generator.validate code
+```
 
-I’ve started working on dataset preparation and have the prompt-generation script written. Right now, I’m building out the rest of the data pipeline and figuring out how I want to structure the experiments.
+The scripts create:
 
-The next big step is getting the smaller training runs working, collecting actual results, and seeing whether the idea holds up.
+- `output/<type>_unique.jsonl`
+- `output/<type>_validated.jsonl`
 
-There aren’t any pretrained weights or benchmark results yet. I’ll add those as they become available.
+They keep the original generated files intact. Re-running either step replaces its derived output file.
 
-### Why Peregrine?
+## Repository layout
 
-I wanted a name that was simple, recognizable, and actually sounded like a model name.
+```text
+.
+├── dataset_generator/
+│   ├── generator.py
+│   ├── prompt.py
+│   ├── deduplicate.py
+│   └── validate.py
+├── kaggle/
+│   └── ollama_server.ipynb
+├── docs/
+│   └── generation-journal.md
+├── output/                 # generated locally; ignored by Git
+├── requirements.txt
+└── README.md
+```
 
-Peregrine falcons are known for their speed and precision, which felt pretty fitting.
+## Notes
 
-
-### What’s next?
-
-First, get the data pipeline working properly. Then train some smaller models, run the experiments, and hopefully learn enough to make the big training run worthwhile.
-
-I don’t expect everything to work on the first try. A lot of this project is me figuring things out as I go, and that’s part of why I’m doing it.
-
-If the research produces something interesting, great. If I end up learning a ridiculous amount about training language models in the process, that’s a win too.
-
-⸻
-
-Project Peregrine is an independent research and development project. Still very much a work in progress.
+- The generator expects an Ollama server that supports the OpenAI-compatible chat completions endpoint and JSON response format.
+- A tunnel connection does not make the endpoint safe to publish. Use a unique password and stop the Kaggle session when generation is finished.
+- Generated examples are synthetic and should be reviewed before they are used for training. JSON validation and deduplication do not verify factual accuracy, code correctness, licensing, or dataset suitability.
