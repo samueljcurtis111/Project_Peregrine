@@ -10,7 +10,9 @@ Open `kaggle/peregrine-dataset-generator.ipynb` in Kaggle.
 
 In the notebook settings:
 - Enable internet access.
-- Select a GPU accelerator. The notebook sets `CUDA_VISIBLE_DEVICES=0,1`, so use a dual-GPU option such as 2x T4 when available.
+- Select a GPU accelerator. The original notebook sets `CUDA_VISIBLE_DEVICES=0,1`, so use a dual-GPU option such as 2x T4 when available.
+
+The notebook's original metadata does not preselect a GPU. You must select the accelerator manually in Kaggle settings before running the cells.
 
 Add these Kaggle secrets before running the notebook:
 - `NGROK_AUTH_TOKEN`: your ngrok authentication token.
@@ -22,7 +24,7 @@ Keep the printed URL and password private. The Kaggle session must remain runnin
 
 ## 2. Install the local Python dependency
 
-From the repository root:
+Use Python 3.10 or newer. From the repository root:
 
 ```powershell
 python -m venv .venv
@@ -30,7 +32,7 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-The requirements file retains the original `openai` dependency.
+The requirements file retains the original `openai` dependency. The OpenAI package installs the `httpx` dependency used by the original generator.
 
 ## 3. Run the original generator
 
